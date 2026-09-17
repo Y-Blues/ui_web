@@ -140,35 +140,19 @@ class TestLogin(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(view.last_result, {"token": "abc"})
 ```
 
-## Limites et vérifications manuelles requises
+## Vérifié dans un vrai navigateur (2026-09-17)
 
-Rien de ce qui touche un vrai navigateur n'a pu être exécuté dans l'environnement qui a produit ce
-dépôt — même discipline que `client/README.md`, à ne pas édulcorer :
-
-- **`PyodideDom`** : seul le chemin `ImportError` → `RuntimeError` de `__init__` (pas de `js` en
-  CPython nu) est prouvé par un vrai test (`test_pyodide_dom.py`). Toutes ses méthodes
-  (`js.document.createElement`, `.appendChild`, `.textContent`, `.setAttribute`, `.value`,
-  `.addEventListener`) sont écrites depuis la surface d'API DOM/Pyodide connue, jamais exécutées
-  contre un vrai `js.document`.
-- **Le pont clic synchrone → coroutine Python** (`on_click`, `pyodide.ffi.create_proxy` +
-  `asyncio.ensure_future`) : que la boucle d'événements de Pyodide fasse réellement avancer cette
-  future depuis un callback JS synchrone n'est vérifié nulle part ici — le genre de chose qui
-  nécessite un vrai navigateur, pas une lecture de documentation.
-- **Attacher `mount` au vrai document** (`js.document.body.appendChild(...)` ou équivalent) : hors
-  du périmètre de ce dépôt, laissé au bootstrap navigateur (voir `client/static/main.py` pour la
-  séquence Pyodide complète — ce dépôt n'écrit pas son propre bootstrap, il consomme celui de
-  `client`).
-- **Types de champ `date`/`choice`/`password`** : l'attribut `type`, le tag `select` et ses
-  `<option>` (une par `Field.choices`, prouvé par `FakeDom`) sont posés sur l'élément, mais leur
-  rendu réel dans un vrai navigateur (`<input type="date">` avec un vrai sélecteur, `<select>`
-  avec ses options réellement affichées/sélectionnables) n'est vérifié nulle part ici.
+Chromium (Playwright), Pyodide 0.28.3, avec la console web de `permissions_app` : `PyodideDom` et
+`PyodidePage` construisent la page, les clics déclenchent les coroutines Python (`create_proxy` +
+`asyncio.ensure_future`), les valeurs saisies sont relues, les erreurs du backend s'affichent, `Navigator`
+enchaîne écrans, menus et messages. Non vérifiés : Firefox et Safari, et le rendu réel des champs
+`date`/`choice`.
 
 ## Ce qui n'est pas encore fait
 
 - **Layout au-delà d'une liste verticale simple** (pas de grille/sections/écrans imbriqués) — même
   limite que `ui_shell`, non nécessaire pour prouver le modèle.
-- **Bootstrap navigateur propre à cet adapter** : aucun `static/index.html` ici — un déploiement
-  réel compose ce dépôt avec la séquence de bootstrap de `client/static/`.
+- **Bootstrap navigateur** : aucun ici, un déploiement utilise la page générique de `client/static/`.
 
 ## Développer ui_web
 
