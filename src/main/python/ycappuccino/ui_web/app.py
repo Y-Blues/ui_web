@@ -4,7 +4,7 @@ perform_action() -- same shape as ycappuccino-ui-shell's ScreenApp, DOM instead 
 widgets. Depends only on DomBinding (dom.py), never on js/pyodide directly -- that binding is
 pyodide_dom.py's job, so this module is testable with FakeDom, no browser required."""
 
-from typing import Any
+from typing import Any, Callable
 
 from ycappuccino.ui.model import Action, Field, Screen
 from ycappuccino.ui.transport import Transport, perform_action
@@ -24,7 +24,7 @@ class ScreenView:
         field_elements: dict,
         error_elements: dict,
         action_elements: dict,
-    ):
+    ) -> None:
         self._screen = screen
         self._transport = transport
         self._dom = dom
@@ -93,7 +93,7 @@ def render_screen(screen: Screen, transport: Transport, dom: DomBinding, mount: 
     return view
 
 
-def _submit_handler(view: ScreenView, action: Action):
+def _submit_handler(view: ScreenView, action: Action) -> Callable:
     async def handler() -> None:
         await view.submit(action)
 
@@ -115,7 +115,7 @@ def _read_value(dom: DomBinding, a_field: Field, element: Any) -> Any:
     return raw
 
 
-def _to_number(raw: str):
+def _to_number(raw: str) -> int | float:
     try:
         return int(raw)
     except ValueError:

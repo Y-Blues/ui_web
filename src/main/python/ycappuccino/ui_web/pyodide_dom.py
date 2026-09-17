@@ -23,7 +23,7 @@ from typing import Any, Awaitable, Callable
 
 
 class PyodideDom:
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             import js
         except ImportError as error:
@@ -58,7 +58,7 @@ class PyodideDom:
 
         from pyodide.ffi import create_proxy
 
-        def trampoline(_event=None) -> None:
+        def trampoline(_event: Any = None) -> None:
             asyncio.ensure_future(callback())
 
         # kept alive on the element itself: create_proxy'd callables are only safe to call back
