@@ -4,7 +4,7 @@ import inspect
 import unittest
 
 from ycappuccino.api.core_base import YCappuccinoComponent
-from ycappuccino.ui_web.page import IWebPage, PyodidePage, install_stylesheet
+from ycappuccino.ui_web.page import IWebPage, PyodidePage, link_stylesheets
 from ycappuccino.ui_web.testing import FakeDom
 
 
@@ -22,21 +22,34 @@ class TestWebPage(unittest.TestCase):
             asyncio.run(page.start())
 
 
-    def test_a_stylesheet_given_by_the_application_goes_in_the_head(self):
+    def test_the_configured_stylesheets_are_linked_in_the_head(self):
         dom = FakeDom()
         head = dom.create_element("head")
 
-        install_stylesheet(dom, head, ".yc-nav { color: red; }")
+        link_stylesheets(dom, head, "style.css, theme/dark.css")
 
-        (style,) = head.children
-        self.assertEqual((style.tag, style.text), ("style", ".yc-nav { color: red; }"))
+        self.assertEqual(
+            [(link.tag, link.attrs) for link in head.children],
+            [
+                ("link", {"rel": "stylesheet", "href": "style.css"}),
+                ("link", {"rel": "stylesheet", "href": "theme/dark.css"}),
+            ],
+        )
+
+    def test_no_configured_stylesheet_links_nothing(self):
+        dom = FakeDom()
+        head = dom.create_element("head")
+
+        link_stylesheets(dom, head, "")
+
+        self.assertEqual(head.children, [])
 
     def test_the_library_ships_no_theme(self):
         import ycappuccino.ui_web
 
         package = Path(ycappuccino.ui_web.__file__).parent
         self.assertEqual(list(package.glob("*.css")), [])
-        self.assertIn("add_stylesheet", IWebPage.__abstractmethods__)
+        self.assertEqual(inspect.signature(PyodidePage).parameters["stylesheets"].default, "")
 
 if __name__ == "__main__":
     unittest.main()

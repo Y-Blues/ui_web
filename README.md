@@ -113,15 +113,17 @@ par exemple).
 (`yc-screen`, `yc-title`, `yc-field`, `yc-label`, `yc-input`, `yc-error`, `yc-actions`, `yc-button`,
 `yc-status`, `yc-message` ; la barre : `yc-nav`, `yc-brand`, `yc-menus`, `yc-menu`, `yc-menu-label`,
 `yc-menu-items`, `yc-menu-item`, `yc-session`, `yc-user`, `yc-sign-out` ; le contenu : `yc-content`,
-`yc-login`). L'application style ces classes avec sa propre feuille, qu'elle passe à `IWebPage.add_stylesheet(css)`
-(voir `permissions_app`, `frontend_web/style.css`).
+`yc-login`). Le thème fait partie de la configuration du déploiement : la propriété `stylesheets` de
+`PyodidePage` liste les feuilles à lier (voir `permissions_app/example/web`, `style.css` et
+`ycappuccino.json`).
 
 ## La page : `IWebPage`
 
 Un composant applicatif ne crée pas son DOM : il dépend de `ycappuccino.ui_web.page.IWebPage` et dessine
 avec `page.navigator()`. `PyodidePage`, publié quand `ycappuccino.ui_web.page` est dans `bundle_prefix`, se
-monte sur l'élément `mount_selector` (`#app` par défaut, `components: PyodidePage: mount_selector: ...`) ;
-`add_stylesheet(css)` ajoute une feuille de style dans le `<head>`.
+monte sur l'élément `mount_selector` (`#app` par défaut) et lie dans le `<head>` les feuilles de
+`stylesheets` (URLs séparées par des virgules, relatives à la page) :
+`components: PyodidePage: {mount_selector: "#app", stylesheets: "style.css"}`.
 Un test fournit sa propre `IWebPage` sur un `FakeDom`.
 
 ## Tester un écran
