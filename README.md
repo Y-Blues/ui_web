@@ -91,6 +91,14 @@ navigator.show_message("Utilisateur créé", back=("Retour au menu", show_menu))
 
 Les choix (`create_role`, `sign_out`...) sont des fonctions sans argument qui renvoient une coroutine.
 
+## Une console entière : `WebApplication`
+
+`ycappuccino.ui_web.application.WebApplication(application, navigator, screens, transports, on_signed_in,
+on_signed_out)` rend une `ycappuccino.ui.application.Application` (voir le README de `ui`) : écran de
+connexion, menu, écrans enchaînés et pré-remplis, message « Enregistré. », déconnexion. `ui_shell` rend la
+même `Application` en terminal. `screens` charge un `Screen` par son nom, `transports` associe un nom à un
+`Transport` ; `on_signed_in(résultat)` reçoit le résultat de la connexion (un jeton, par exemple).
+
 ## La page : `IWebPage`
 
 Un composant applicatif ne crée pas son DOM : il dépend de `ycappuccino.ui_web.page.IWebPage` et dessine
