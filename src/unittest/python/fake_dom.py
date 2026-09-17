@@ -28,6 +28,9 @@ class FakeDom:
     def set_attribute(self, element: FakeElement, name: str, value: str) -> None:
         element.attrs[name] = value
 
+    def clear(self, element: FakeElement) -> None:
+        element.children = []
+
     def get_value(self, element: FakeElement) -> str:
         return element.value
 
@@ -40,3 +43,11 @@ class FakeDom:
     async def click(self, element: FakeElement) -> Any:
         assert element.click_callback is not None, "no click callback registered on this element"
         return await element.click_callback()
+
+
+def texts(element: FakeElement) -> list[str]:
+    """the non-empty texts of the element and its descendants, in document order"""
+    found = [element.text] if element.text else []
+    for child in element.children:
+        found.extend(texts(child))
+    return found

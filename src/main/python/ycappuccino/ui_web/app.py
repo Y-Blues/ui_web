@@ -4,13 +4,18 @@ perform_action() -- same shape as ycappuccino-ui-shell's ScreenApp, DOM instead 
 widgets. Depends only on DomBinding (dom.py), never on js/pyodide directly -- that binding is
 pyodide_dom.py's job, so this module is testable with FakeDom, no browser required."""
 
-from typing import Any, Callable
+import logging
+from typing import Any, Awaitable, Callable
 
 from ycappuccino.ui.model import Action, Field, Screen
 from ycappuccino.ui.transport import Transport, perform_action
 from ycappuccino.ui.validation import validate_screen
 
 from ycappuccino.ui_web.dom import DomBinding
+
+_logger = logging.getLogger(__name__)
+
+OnResult = Callable[[Any], Awaitable[None]]
 
 _FIELD_INPUT_TYPES = {"boolean": "checkbox", "password": "password", "number": "number", "date": "date"}
 
@@ -24,6 +29,8 @@ class ScreenView:
         field_elements: dict,
         error_elements: dict,
         action_elements: dict,
+        status_element: Any = None,
+        on_result: OnResult | None = None,
     ) -> None:
         self._screen = screen
         self._transport = transport
@@ -31,9 +38,12 @@ class ScreenView:
         self.field_elements = field_elements
         self.error_elements = error_elements
         self.action_elements = action_elements
+        self.status_element = status_element
+        self._on_result = on_result
         self.last_values: dict[str, Any] = {}
         self.last_errors: dict[str, str] = {}
         self.last_result: Any = None
+        self.last_error: str | None = None
 
     async def submit(self, action: Action) -> None:
         values = self._collect_values()
@@ -43,7 +53,22 @@ class ScreenView:
         self._render_errors(errors)
         if errors:
             return
-        self.last_result = await perform_action(action, values, self._transport)
+        try:
+            result = await perform_action(action, values, self._transport)
+        except Exception as error:
+            # a refused call (wrong password, forbidden, invalid...) is shown on the screen, which stays
+            _logger.info("action %s failed", action.name, exc_info=True)
+            self._show_status(str(error) or type(error).__name__)
+            return
+        self._show_status(None)
+        self.last_result = result
+        if self._on_result is not None:
+            await self._on_result(result)
+
+    def _show_status(self, message: str | None) -> None:
+        self.last_error = message
+        if self.status_element is not None:
+            self._dom.set_text(self.status_element, message or "")
 
     def _collect_values(self) -> dict[str, Any]:
         return {
@@ -56,10 +81,17 @@ class ScreenView:
             self._dom.set_text(self.error_elements[a_field.name], errors.get(a_field.name, ""))
 
 
-def render_screen(screen: Screen, transport: Transport, dom: DomBinding, mount: Any) -> ScreenView:
+def render_screen(
+    screen: Screen, transport: Transport, dom: DomBinding, mount: Any, on_result: OnResult | None = None
+) -> ScreenView:
+    """on_result receives the result of every successful action, e.g. to show the next screen"""
     field_elements = {}
     error_elements = {}
     action_elements = {}
+
+    title = dom.create_element("h2")
+    dom.set_text(title, screen.title)
+    dom.append_child(mount, title)
 
     for a_field in screen.fields:
         label = dom.create_element("label")
@@ -81,7 +113,11 @@ def render_screen(screen: Screen, transport: Transport, dom: DomBinding, mount: 
         dom.append_child(mount, error_element)
         error_elements[a_field.name] = error_element
 
-    view = ScreenView(screen, transport, dom, field_elements, error_elements, action_elements)
+    status_element = dom.create_element("p")
+    dom.set_attribute(status_element, "role", "alert")
+    view = ScreenView(
+        screen, transport, dom, field_elements, error_elements, action_elements, status_element, on_result
+    )
 
     for action in screen.actions:
         button = dom.create_element("button")
@@ -90,6 +126,7 @@ def render_screen(screen: Screen, transport: Transport, dom: DomBinding, mount: 
         action_elements[action.name] = button
         dom.on_click(button, _submit_handler(view, action))
 
+    dom.append_child(mount, status_element)
     return view
 
 

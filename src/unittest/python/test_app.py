@@ -177,5 +177,50 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
         )
 
 
+    async def test_a_failed_call_shows_its_message_and_keeps_the_screen(self):
+        class FailingTransport:
+            async def call(self, service, method, path, params, body):
+                raise ValueError("wrong password")
+
+        dom = FakeDom()
+        mount = dom.create_element("div")
+        results = []
+        view = render_screen(_login_screen(), FailingTransport(), dom, mount, on_result=_collect(results))
+        dom.set_value(view.field_elements["username"], "aurelien")
+
+        await dom.click(view.action_elements["submit"])
+
+        self.assertEqual(view.last_error, "wrong password")
+        self.assertEqual(view.status_element.text, "wrong password")
+        self.assertEqual(results, [])
+
+    async def test_a_successful_call_is_handed_to_on_result_and_clears_the_last_error(self):
+        dom = FakeDom()
+        mount = dom.create_element("div")
+        results = []
+        view = render_screen(_login_screen(), FakeTransport(result="token"), dom, mount, on_result=_collect(results))
+        view.last_error = "previous"
+        dom.set_value(view.field_elements["username"], "aurelien")
+
+        await dom.click(view.action_elements["submit"])
+
+        self.assertEqual((results, view.last_error, view.status_element.text), (["token"], None, ""))
+
+    def test_the_title_is_rendered_first(self):
+        dom = FakeDom()
+        mount = dom.create_element("div")
+
+        render_screen(_login_screen(), FakeTransport(), dom, mount)
+
+        self.assertEqual((mount.children[0].tag, mount.children[0].text), ("h2", "Connexion"))
+
+
+def _collect(results):
+    async def on_result(result):
+        results.append(result)
+
+    return on_result
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "YCappuccino ui-web: renders a ycappuccino-ui Screen as real DOM elements, live in the browser under Pyodide (ycappuccino-client), no server-side HTML generation"
 requires-python = ">=3.10"
 dependencies = [
+    "ycappuccino-api",
     "ycappuccino-ui",
 ]
 
@@ -16,4 +17,5 @@ module-name = "ycappuccino.ui_web"
 module-root = "src/main/python"
 
 [tool.uv.sources]
+ycappuccino-api = { path = "../api", editable = true }
 ycappuccino-ui = { path = "../ui", editable = true }

@@ -41,6 +41,12 @@ class PyodideDom:
     def append_child(self, parent: Any, child: Any) -> None:
         parent.appendChild(child)
 
+    def clear(self, element: Any) -> None:
+        element.replaceChildren()
+
+    def query(self, selector: str) -> Any:
+        return self._js.document.querySelector(selector)
+
     def set_text(self, element: Any, text: str) -> None:
         element.textContent = text
 

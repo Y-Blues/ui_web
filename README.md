@@ -70,6 +70,33 @@ view.action_elements["submit"]    # le <button> de l'action
 view.last_result                  # ce que perform_action() a renvoyé, après le dernier clic réussi
 ```
 
+## Erreurs et résultat
+
+Un appel refusé par le backend (`InvalidRequest`, `Forbidden`...) n'interrompt rien : son message est écrit
+dans `view.status_element` (un `<p role="alert">` sous les boutons), gardé dans `view.last_error`, et l'écran
+reste affiché. Un appel réussi efface ce message, remplit `view.last_result` et passe le résultat à
+`on_result`, si `render_screen(..., on_result=...)` en a reçu un.
+
+## Plusieurs écrans : `Navigator`
+
+`ycappuccino.ui_web.navigation.Navigator(dom, mount)` montre une chose à la fois dans `mount`, chaque
+appel remplaçant la précédente :
+
+```python
+navigator.show_screen(login_screen, transport, on_result=signed_in)   # un écran ; signed_in(result)
+navigator.show_menu("Administration", [("Créer un rôle", create_role), ("Se déconnecter", sign_out)])
+navigator.show_message("Utilisateur créé", back=("Retour au menu", show_menu))
+```
+
+Les choix (`create_role`, `sign_out`...) sont des fonctions sans argument qui renvoient une coroutine.
+
+## La page : `IWebPage`
+
+Un composant applicatif ne crée pas son DOM : il dépend de `ycappuccino.ui_web.page.IWebPage` et dessine
+avec `page.navigator()`. `PyodidePage`, publié quand `ycappuccino.ui_web.page` est dans `bundle_prefix`, se
+monte sur l'élément `mount_selector` (`#app` par défaut, `components: PyodidePage: mount_selector: ...`).
+Un test fournit sa propre `IWebPage` sur un `FakeDom`.
+
 ## Tester un écran
 
 Comme `ui_shell`, aucun mock — un vrai arbre `FakeDom`, un vrai callback de clic attendu :
@@ -139,7 +166,6 @@ dépôt — même discipline que `client/README.md`, à ne pas édulcorer :
 
 - **Layout au-delà d'une liste verticale simple** (pas de grille/sections/écrans imbriqués) — même
   limite que `ui_shell`, non nécessaire pour prouver le modèle.
-- **Navigation entre plusieurs écrans** (un « écran suivant » après une action réussie).
 - **Bootstrap navigateur propre à cet adapter** : aucun `static/index.html` ici — un déploiement
   réel compose ce dépôt avec la séquence de bootstrap de `client/static/`.
 
