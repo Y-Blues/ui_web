@@ -100,6 +100,7 @@ def render_screen(
 
         input_element = dom.create_element(_input_tag(a_field))
         dom.set_attribute(input_element, "type", _FIELD_INPUT_TYPES.get(a_field.type, "text"))
+        dom.set_attribute(input_element, "name", a_field.name)
         if a_field.type == "choice":
             for choice in a_field.choices:
                 option = dom.create_element("option")

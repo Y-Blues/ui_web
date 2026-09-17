@@ -2,7 +2,7 @@ import unittest
 
 from ycappuccino.ui.model import Action, Endpoint, Field, Screen
 
-from fake_dom import FakeDom
+from ycappuccino.ui_web.testing import FakeDom, find_button, find_field
 from ycappuccino.ui_web.app import render_screen
 
 
@@ -34,6 +34,17 @@ class TestRenderScreen(unittest.TestCase):
         self.assertIn("username", view.field_elements)
         self.assertEqual(view.field_elements["username"].tag, "input")
         self.assertIn(view.field_elements["username"], mount.children)
+
+    def test_inputs_are_named_after_their_field_and_found_by_name_or_text(self):
+        dom = FakeDom()
+        mount = dom.create_element("div")
+
+        view = render_screen(_login_screen(), FakeTransport(), dom, mount)
+
+        self.assertEqual(view.field_elements["username"].attrs["name"], "username")
+        self.assertIs(find_field(mount, "username"), view.field_elements["username"])
+        self.assertIs(find_button(mount, "Se connecter"), view.action_elements["submit"])
+        self.assertIsNone(find_button(mount, "missing"))
 
     def test_button_carries_the_action_label(self):
         dom = FakeDom()

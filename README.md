@@ -25,8 +25,9 @@ directement — exactement le rôle que `Transport` joue pour `ycappuccino.ui`, 
 
 - `ycappuccino.ui_web.pyodide_dom.PyodideDom` — la vraie, contre `js.document`/`pyodide.ffi`,
   utilisée en production.
-- `FakeDom` (`src/unittest/python/fake_dom.py`) — un arbre en mémoire, réel (pas un mock), utilisé
-  par tous les tests de ce dépôt : ils vérifient un vrai état d'arbre (attributs, enfants,
+- `FakeDom` (`ycappuccino.ui_web.testing`) — un arbre en mémoire, réel (pas un mock), utilisé
+  par tous les tests de ce dépôt et utilisable par ceux d'une application (`find_field(mount, nom)`,
+  `find_button(mount, libellé)`) : ils vérifient un vrai état d'arbre (attributs, enfants,
   valeurs) et peuvent réellement déclencher un callback de clic enregistré et l'attendre.
 
 ## Afficher un écran
@@ -107,7 +108,7 @@ import unittest
 from ycappuccino.ui.model import Action, Endpoint, Field, Screen
 from ycappuccino.ui_web.app import render_screen
 
-from fake_dom import FakeDom
+from ycappuccino.ui_web.testing import FakeDom
 
 
 class FakeTransport:

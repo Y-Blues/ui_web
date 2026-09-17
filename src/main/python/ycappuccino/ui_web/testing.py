@@ -1,4 +1,5 @@
-"""FakeDom: a real in-memory DomBinding implementation, not a mock -- tests assert on real tree
+"""FakeDom: a real in-memory DomBinding implementation for the tests of ui_web and of the applications
+built on it, not a mock -- tests assert on real tree
 state (attrs, children, values) and can actually invoke a registered click callback and await it,
 proving the wiring app.py does, not just that some method got called."""
 
@@ -51,3 +52,22 @@ def texts(element: FakeElement) -> list[str]:
     for child in element.children:
         found.extend(texts(child))
     return found
+
+
+def find_field(element: FakeElement, name: str) -> FakeElement | None:
+    """the input or select of the field named name, among the element and its descendants"""
+    return _find(element, lambda candidate: candidate.attrs.get("name") == name)
+
+
+def find_button(element: FakeElement, label: str) -> FakeElement | None:
+    return _find(element, lambda candidate: candidate.tag == "button" and candidate.text == label)
+
+
+def _find(element: FakeElement, matches: Callable[[FakeElement], bool]) -> FakeElement | None:
+    if matches(element):
+        return element
+    for child in element.children:
+        found = _find(child, matches)
+        if found is not None:
+            return found
+    return None

@@ -7,7 +7,7 @@ import unittest
 from ycappuccino.ui.model import Action, Endpoint, Field, Screen
 from ycappuccino.ui_web.app import render_screen
 
-from fake_dom import FakeDom
+from ycappuccino.ui_web.testing import FakeDom
 
 
 class FakeTransport:

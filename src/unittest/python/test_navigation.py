@@ -1,6 +1,6 @@
 import unittest
 
-from fake_dom import FakeDom, texts
+from ycappuccino.ui_web.testing import FakeDom, texts
 
 from ycappuccino.ui.model import Action, Endpoint, Field, Screen
 from ycappuccino.ui_web.navigation import Navigator

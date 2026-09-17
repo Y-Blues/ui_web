@@ -10,7 +10,7 @@ ycappuccino-client's pyodide_transport.py. Manual verification in a real browser
 before relying on this in production.
 
 js and pyodide.ffi are imported inside __init__/on_click, never at module import time, so
-ycappuccino.ui_web.app stays importable (and unit-testable, see fake_dom.py) in plain CPython.
+ycappuccino.ui_web.app stays importable (and unit-testable, see testing.py) in plain CPython.
 
 on_click bridges a synchronous JS click event to an async Python callback via
 pyodide.ffi.create_proxy(...) wrapping a sync trampoline that schedules the coroutine with
