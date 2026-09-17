@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 import inspect
 import unittest
 
@@ -21,17 +22,21 @@ class TestWebPage(unittest.TestCase):
             asyncio.run(page.start())
 
 
-    def test_the_default_stylesheet_is_installed_in_the_head(self):
+    def test_a_stylesheet_given_by_the_application_goes_in_the_head(self):
         dom = FakeDom()
         head = dom.create_element("head")
 
-        install_stylesheet(dom, head)
+        install_stylesheet(dom, head, ".yc-nav { color: red; }")
 
         (style,) = head.children
-        self.assertEqual(style.tag, "style")
-        for selector in (".yc-nav", ".yc-menu", ".yc-screen", ".yc-field", ".yc-error", ".yc-button", ".yc-status"):
-            self.assertIn(selector, style.text)
+        self.assertEqual((style.tag, style.text), ("style", ".yc-nav { color: red; }"))
 
+    def test_the_library_ships_no_theme(self):
+        import ycappuccino.ui_web
+
+        package = Path(ycappuccino.ui_web.__file__).parent
+        self.assertEqual(list(package.glob("*.css")), [])
+        self.assertIn("add_stylesheet", IWebPage.__abstractmethods__)
 
 if __name__ == "__main__":
     unittest.main()

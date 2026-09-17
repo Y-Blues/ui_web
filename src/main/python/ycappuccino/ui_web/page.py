@@ -1,12 +1,11 @@
 """
 IWebPage: the page an application component draws into, injected like any other service, so the
 component never touches js/pyodide and is tested with a FakeDom. PyodidePage is the browser one: it
-mounts on the element matching mount_selector (components: PyodidePage: mount_selector: "#main") and
-installs the default theme, style.css.
+mounts on the element matching mount_selector (components: PyodidePage: mount_selector: "#main"). The
+library ships no theme: the application styles the page with add_stylesheet.
 """
 
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import Any
 
 from ycappuccino.api.core_base import YCappuccinoComponent
@@ -15,13 +14,10 @@ from ycappuccino.ui_web.navigation import Navigator
 from ycappuccino.ui_web.pyodide_dom import PyodideDom
 
 
-STYLESHEET = Path(__file__).parent / "style.css"
-
-
-def install_stylesheet(dom: DomBinding, head: Any) -> None:
-    """the default theme (style.css): the yc-* classes the screens, the navigation bar and the messages carry"""
+def install_stylesheet(dom: DomBinding, head: Any, css: str) -> None:
+    """a style element holding the css, appended to the head"""
     style = dom.create_element("style")
-    dom.set_text(style, STYLESHEET.read_text(encoding="utf-8"))
+    dom.set_text(style, css)
     dom.append_child(head, style)
 
 
@@ -30,6 +26,10 @@ class IWebPage(YCappuccinoComponent, ABC):
     @abstractmethod
     def navigator(self) -> Navigator:
         """the navigator showing screens, menus and messages on this page"""
+
+    @abstractmethod
+    def add_stylesheet(self, css: str) -> None:
+        """style the page: the theme is the application's, on the yc-* classes ui_web puts on its elements"""
 
 
 class PyodidePage(IWebPage):
@@ -43,7 +43,7 @@ class PyodidePage(IWebPage):
         mount = dom.query(self._mount_selector)
         if mount is None:
             raise RuntimeError(f"no element matches {self._mount_selector!r} on this page")
-        install_stylesheet(dom, dom.query("head"))
+        self._dom = dom
         self._navigator = Navigator(dom, mount)
 
     async def stop(self) -> None:
@@ -51,3 +51,6 @@ class PyodidePage(IWebPage):
 
     def navigator(self) -> Navigator:
         return self._navigator
+
+    def add_stylesheet(self, css: str) -> None:
+        install_stylesheet(self._dom, self._dom.query("head"), css)

@@ -107,19 +107,21 @@ du navigator :
 associe un nom à un `Transport` ; `on_signed_in(résultat)` reçoit le résultat de la connexion (un jeton,
 par exemple).
 
-## Thème
+## Thème : celui de l'application
 
-Chaque élément porte une classe `yc-*` (`yc-screen`, `yc-field`, `yc-input`, `yc-error`, `yc-button`,
-`yc-status`, `yc-nav`, `yc-menu`...). `PyodidePage` installe au démarrage le thème par défaut,
-`ycappuccino/ui_web/style.css` : une page de site, sans cadre (barre expresso pleine largeur, contenu aligné
-sur une largeur de 1200 px, clair et sombre, mobile) ; une application peut le compléter
-ou le remplacer avec sa propre feuille de style sur ces mêmes classes.
+`ui_web` ne fournit aucune feuille de style, seulement la structure : chaque élément porte une classe `yc-*`
+(`yc-screen`, `yc-title`, `yc-field`, `yc-label`, `yc-input`, `yc-error`, `yc-actions`, `yc-button`,
+`yc-status`, `yc-message` ; la barre : `yc-nav`, `yc-brand`, `yc-menus`, `yc-menu`, `yc-menu-label`,
+`yc-menu-items`, `yc-menu-item`, `yc-session`, `yc-user`, `yc-sign-out` ; le contenu : `yc-content`,
+`yc-login`). L'application style ces classes avec sa propre feuille, qu'elle passe à `IWebPage.add_stylesheet(css)`
+(voir `permissions_app`, `frontend_web/style.css`).
 
 ## La page : `IWebPage`
 
 Un composant applicatif ne crée pas son DOM : il dépend de `ycappuccino.ui_web.page.IWebPage` et dessine
 avec `page.navigator()`. `PyodidePage`, publié quand `ycappuccino.ui_web.page` est dans `bundle_prefix`, se
-monte sur l'élément `mount_selector` (`#app` par défaut, `components: PyodidePage: mount_selector: ...`).
+monte sur l'élément `mount_selector` (`#app` par défaut, `components: PyodidePage: mount_selector: ...`) ;
+`add_stylesheet(css)` ajoute une feuille de style dans le `<head>`.
 Un test fournit sa propre `IWebPage` sur un `FakeDom`.
 
 ## Tester un écran
