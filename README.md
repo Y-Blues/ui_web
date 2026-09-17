@@ -1,0 +1,154 @@
+# ycappuccino-ui-web
+
+Rend un `ycappuccino.ui.model.Screen` en vrais éléments DOM, en direct dans le navigateur sous
+Pyodide (`ycappuccino-client`) — **pas de génération HTML côté serveur**. Décision utilisateur
+explicite du 2026-09-16 (voir
+[`remote/docs/superpowers/specs/2026-09-16-ui-screen-library-checkpoint.md`](../remote/docs/superpowers/specs/2026-09-16-ui-screen-library-checkpoint.md)),
+qui hérite intégralement des risques d'exécution navigateur déjà documentés dans
+[`client/README.md`](../client/README.md) (vrais threads OS sous Pyodide, PyYAML dans la liste
+curatée, tension COOP/COEP) — ce dépôt ne referme aucun de ces risques, il en dépend.
+
+Prérequis : lire le README de [ui](../ui/README.md) (le modèle `Screen`/`Field`/`Action`/
+`Endpoint`, la validation, `Transport`/`perform_action`) et de [client](../client/README.md) (le
+runtime Pyodide dont cet adapter dépend pour tourner réellement dans un navigateur). Ce dépôt
+n'ajoute rien au modèle `ui`, il le rend — même rôle que `ycappuccino-ui-shell` pour le terminal.
+
+## `DomBinding` : la seule chose que ce dépôt invente
+
+`client` (`components.py`/`transport.py`/`remote_proxy.py`) ne fournit que des proxys d'accès aux
+données (`RemoteCrud`, `RemoteServiceEndpoint`, ...) — **aucune primitive de manipulation du DOM**
+n'existait nulle part avant ce dépôt. `ycappuccino.ui_web.dom.DomBinding` est ce `Protocol`
+minimal (`create_element`, `append_child`, `set_text`, `set_attribute`, `get_value`, `set_value`,
+`on_click`) : `render_screen()` (`app.py`) ne connaît que cette interface, jamais `js`/`pyodide`
+directement — exactement le rôle que `Transport` joue pour `ycappuccino.ui`, ou `IHttpFetcher` pour
+`client`. Deux implémentations :
+
+- `ycappuccino.ui_web.pyodide_dom.PyodideDom` — la vraie, contre `js.document`/`pyodide.ffi`,
+  utilisée en production.
+- `FakeDom` (`src/unittest/python/fake_dom.py`) — un arbre en mémoire, réel (pas un mock), utilisé
+  par tous les tests de ce dépôt : ils vérifient un vrai état d'arbre (attributs, enfants,
+  valeurs) et peuvent réellement déclencher un callback de clic enregistré et l'attendre.
+
+## Afficher un écran
+
+```python
+from ycappuccino.ui.model import Action, Endpoint, Field, Screen
+from ycappuccino.ui_web.app import render_screen
+from ycappuccino.ui_web.pyodide_dom import PyodideDom  # navigateur réel uniquement
+
+screen = Screen(
+    title="Connexion",
+    fields=(Field(name="username", label="Nom d'utilisateur", required=True),),
+    actions=(Action(name="submit", label="Se connecter", endpoint=Endpoint(service="login")),),
+)
+
+dom = PyodideDom()
+mount = dom.create_element("div")
+# dom.append_child(js.document.body, mount)  # attacher au vrai document, navigateur uniquement
+
+view = render_screen(screen, transport, dom, mount)
+# view.field_elements["username"], view.action_elements["submit"], view.last_result, ...
+```
+
+`transport` est n'importe quel `ycappuccino.ui.transport.Transport` — typiquement `client`'s
+`HttpTransport` dans un navigateur, ou un `IServiceEndpoint` local si l'adapter tourne dans le même
+process que le backend (voir le README de `ui`).
+
+## Valider et soumettre
+
+`render_screen` câble déjà tout : chaque bouton d'action a un callback `on_click` qui collecte les
+valeurs des champs (`DomBinding.get_value`, coercée selon `Field.type` — `number`→`int`/`float`,
+`boolean`→`bool`, `list`→liste séparée par virgules), les valide
+(`ycappuccino.ui.validation.validate_screen`, même règles que tous les adapters), affiche les
+erreurs inline (`view.error_elements[name]`) et n'appelle `perform_action` que si tout est valide.
+Rien de ceci n'est à réécrire par l'application :
+
+```python
+view.field_elements["username"]   # l'élément <input> DOM du champ
+view.error_elements["username"]   # l'élément où son message d'erreur est écrit
+view.action_elements["submit"]    # le <button> de l'action
+view.last_result                  # ce que perform_action() a renvoyé, après le dernier clic réussi
+```
+
+## Tester un écran
+
+Comme `ui_shell`, aucun mock — un vrai arbre `FakeDom`, un vrai callback de clic attendu :
+
+```python
+import unittest
+
+from ycappuccino.ui.model import Action, Endpoint, Field, Screen
+from ycappuccino.ui_web.app import render_screen
+
+from fake_dom import FakeDom
+
+
+class FakeTransport:
+    def __init__(self, result=None):
+        self.result = result
+        self.calls = []
+
+    async def call(self, service, method, path, params, body):
+        self.calls.append((service, method, path, params, body))
+        return self.result
+
+
+class TestLogin(unittest.IsolatedAsyncioTestCase):
+    async def test_submits_the_username(self):
+        dom = FakeDom()
+        mount = dom.create_element("div")
+        transport = FakeTransport(result={"token": "abc"})
+        screen = Screen(
+            title="Connexion",
+            fields=(Field(name="username", label="Nom d'utilisateur", required=True),),
+            actions=(Action(name="submit", label="Se connecter", endpoint=Endpoint(service="login")),),
+        )
+        view = render_screen(screen, transport, dom, mount)
+        dom.set_value(view.field_elements["username"], "aurelien")
+
+        await dom.click(view.action_elements["submit"])
+
+        self.assertEqual(transport.calls, [("login", "POST", (), {}, {"username": "aurelien"})])
+        self.assertEqual(view.last_result, {"token": "abc"})
+```
+
+## Limites et vérifications manuelles requises
+
+Rien de ce qui touche un vrai navigateur n'a pu être exécuté dans l'environnement qui a produit ce
+dépôt — même discipline que `client/README.md`, à ne pas édulcorer :
+
+- **`PyodideDom`** : seul le chemin `ImportError` → `RuntimeError` de `__init__` (pas de `js` en
+  CPython nu) est prouvé par un vrai test (`test_pyodide_dom.py`). Toutes ses méthodes
+  (`js.document.createElement`, `.appendChild`, `.textContent`, `.setAttribute`, `.value`,
+  `.addEventListener`) sont écrites depuis la surface d'API DOM/Pyodide connue, jamais exécutées
+  contre un vrai `js.document`.
+- **Le pont clic synchrone → coroutine Python** (`on_click`, `pyodide.ffi.create_proxy` +
+  `asyncio.ensure_future`) : que la boucle d'événements de Pyodide fasse réellement avancer cette
+  future depuis un callback JS synchrone n'est vérifié nulle part ici — le genre de chose qui
+  nécessite un vrai navigateur, pas une lecture de documentation.
+- **Attacher `mount` au vrai document** (`js.document.body.appendChild(...)` ou équivalent) : hors
+  du périmètre de ce dépôt, laissé au bootstrap navigateur (voir `client/static/main.py` pour la
+  séquence Pyodide complète — ce dépôt n'écrit pas son propre bootstrap, il consomme celui de
+  `client`).
+- **Types de champ `date`/`choice`/`password`** : l'attribut `type`/le tag `select` posé sur
+  l'élément est prouvé (`FakeDom`), mais le rendu réel d'un `<input type="date">` ou d'un
+  `<select>` avec ses `<option>` (non générées ici — seul le tag `select` est créé, pas ses
+  options) reste à faire une fois un vrai écran avec des choix l'exige.
+
+## Ce qui n'est pas encore fait
+
+- **Les `<option>` d'un champ `choice`** : `render_screen` crée un `<select>` mais n'y ajoute
+  aucune `<option>` pour `Field.choices` — prochaine étape évidente, pas encore une test failing
+  écrit pour elle.
+- **Layout au-delà d'une liste verticale simple** (pas de grille/sections/écrans imbriqués) — même
+  limite que `ui_shell`, non nécessaire pour prouver le modèle.
+- **Navigation entre plusieurs écrans** (un « écran suivant » après une action réussie).
+- **Bootstrap navigateur propre à cet adapter** : aucun `static/index.html` ici — un déploiement
+  réel compose ce dépôt avec la séquence de bootstrap de `client/static/`.
+
+## Développer ui_web
+
+```bash
+uv sync
+uv run python -m unittest discover -s src/unittest/python
+```
