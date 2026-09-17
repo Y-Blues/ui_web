@@ -51,9 +51,9 @@ view = render_screen(screen, transport, dom, mount)
 # view.field_elements["username"], view.action_elements["submit"], view.last_result, ...
 ```
 
-`transport` est n'importe quel `ycappuccino.ui.transport.Transport` — typiquement `client`'s
-`HttpTransport` dans un navigateur, ou un `IServiceEndpoint` local si l'adapter tourne dans le même
-process que le backend (voir le README de `ui`).
+`transport` est n'importe quel `ycappuccino.ui.transport.Transport`, typiquement un pont de `ui`
+(`CrudTransport`, `ServiceEndpointTransport`, `ComponentTransport`) sur une interface backend injectée :
+un proxy généré dans un navigateur, l'implémentation elle-même dans le process du backend.
 
 ## Valider et soumettre
 
