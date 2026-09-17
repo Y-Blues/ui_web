@@ -94,10 +94,24 @@ Les choix (`create_role`, `sign_out`...) sont des fonctions sans argument qui re
 ## Une console entière : `WebApplication`
 
 `ycappuccino.ui_web.application.WebApplication(application, navigator, screens, transports, on_signed_in,
-on_signed_out)` rend une `ycappuccino.ui.application.Application` (voir le README de `ui`) : écran de
-connexion, menu, écrans enchaînés et pré-remplis, message « Enregistré. », déconnexion. `ui_shell` rend la
-même `Application` en terminal. `screens` charge un `Screen` par son nom, `transports` associe un nom à un
-`Transport` ; `on_signed_in(résultat)` reçoit le résultat de la connexion (un jeton, par exemple).
+on_signed_out)` rend une `ycappuccino.ui.application.Application` (voir le README de `ui`) dans le `mount`
+du navigator :
+
+- avant connexion, l'écran de connexion seul (`main.yc-content.yc-login`) ;
+- ensuite une barre `header.yc-nav` (titre, un menu déroulant `details.yc-menu` par section, l'utilisateur,
+  « Se déconnecter ») au-dessus de `main.yc-content` : le message de bienvenue, les écrans d'une entrée
+  (pré-remplis depuis l'étape précédente), puis « Enregistré. ».
+
+`ui_shell` rend la même `Application` en terminal. `screens` charge un `Screen` par son nom, `transports`
+associe un nom à un `Transport` ; `on_signed_in(résultat)` reçoit le résultat de la connexion (un jeton,
+par exemple).
+
+## Thème
+
+Chaque élément porte une classe `yc-*` (`yc-screen`, `yc-field`, `yc-input`, `yc-error`, `yc-button`,
+`yc-status`, `yc-nav`, `yc-menu`...). `PyodidePage` installe au démarrage le thème par défaut,
+`ycappuccino/ui_web/style.css` (barre expresso, clair et sombre, mobile) ; une application peut le compléter
+ou le remplacer avec sa propre feuille de style sur ces mêmes classes.
 
 ## La page : `IWebPage`
 

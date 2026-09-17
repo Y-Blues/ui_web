@@ -32,6 +32,9 @@ class FakeDom:
     def clear(self, element: FakeElement) -> None:
         element.children = []
 
+    def remove_attribute(self, element: FakeElement, name: str) -> None:
+        element.attrs.pop(name, None)
+
     def get_value(self, element: FakeElement) -> str:
         return element.value
 

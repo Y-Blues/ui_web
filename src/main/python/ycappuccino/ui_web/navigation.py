@@ -32,16 +32,21 @@ class Navigator:
         self.dom.append_child(self.mount, heading)
         return {label: self._button(label, choice) for label, choice in entries}
 
-    def show_message(self, text: str, back: tuple[str, Choice | None]) -> dict[str, Any]:
+    def show_message(self, text: str, back: tuple[str, Choice | None] | None = None) -> dict[str, Any]:
+        """the text alone, or with a button (label, choice) leading back"""
         self.dom.clear(self.mount)
         message = self.dom.create_element("p")
+        self.dom.set_attribute(message, "class", "yc-message")
         self.dom.set_text(message, text)
         self.dom.append_child(self.mount, message)
+        if back is None:
+            return {}
         label, choice = back
         return {label: self._button(label, choice)}
 
     def _button(self, label: str, choice: Choice | None) -> Any:
         button = self.dom.create_element("button")
+        self.dom.set_attribute(button, "class", "yc-button")
         self.dom.set_text(button, label)
         self.dom.append_child(self.mount, button)
         if choice is not None:

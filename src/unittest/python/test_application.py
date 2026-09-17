@@ -8,15 +8,19 @@ from ycappuccino.ui_web.testing import FakeDom, find_button, find_field, texts
 
 APPLICATION = load_application_yaml("""
 title: Administration
-login: {screen: login, transport: auth}
+login: {screen: login, transport: auth, user: user}
 menu:
-  - label: Créer un rôle
-    steps:
-      - {screen: role, transport: data}
-  - label: Créer un utilisateur
-    steps:
-      - {screen: credentials, transport: data}
-      - {screen: profile, transport: data, prefill: {login: values.login, id: result._id}}
+  - label: Rôles
+    entries:
+      - label: Créer un rôle
+        steps:
+          - {screen: role, transport: data}
+  - label: Utilisateurs
+    entries:
+      - label: Créer un utilisateur
+        steps:
+          - {screen: credentials, transport: data}
+          - {screen: profile, transport: data, prefill: {login: values.login, id: result._id}}
 """)
 
 
@@ -48,6 +52,13 @@ class Transport:
         return {"_id": f"{service}-1"}
 
 
+def _by_class(element, name):
+    found = [element] if element.attrs.get("class", "").split().count(name) else []
+    for child in element.children:
+        found.extend(_by_class(child, name))
+    return found
+
+
 class TestWebApplication(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
@@ -63,11 +74,10 @@ class TestWebApplication(unittest.IsolatedAsyncioTestCase):
         async def signed_out():
             self.events.append(("out",))
 
-        self.application = WebApplication(
+        WebApplication(
             APPLICATION, Navigator(self.dom, self.mount), SCREENS.__getitem__,
             {"auth": self.auth, "data": self.data}, signed_in, signed_out,
-        )
-        self.application.start()
+        ).start()
 
     async def _submit(self, **values):
         for name, value in values.items():
@@ -77,11 +87,27 @@ class TestWebApplication(unittest.IsolatedAsyncioTestCase):
     async def _choose(self, label):
         await self.dom.click(find_button(self.mount, label))
 
-    async def test_login_then_the_menu_with_its_entries_and_sign_out(self):
+    def _content(self):
+        (content,) = _by_class(self.mount, "yc-content")
+        return content
+
+    def test_before_login_there_is_no_navigation_bar(self):
+        self.assertEqual(_by_class(self.mount, "yc-nav"), [])
+        self.assertIn("login", texts(self.mount))
+
+    async def test_login_shows_the_bar_with_one_dropdown_per_section_the_user_and_the_welcome(self):
         await self._submit(user="alice")
 
         self.assertEqual(self.events, [("in", {"_id": "login-1"})])
-        self.assertEqual(texts(self.mount), ["Administration", "Créer un rôle", "Créer un utilisateur", "Se déconnecter"])
+        (nav,) = _by_class(self.mount, "yc-nav")
+        dropdowns = _by_class(nav, "yc-menu")
+        self.assertEqual([dropdown.tag for dropdown in dropdowns], ["details", "details"])
+        self.assertEqual(
+            [texts(dropdown) for dropdown in dropdowns], [["Rôles", "Créer un rôle"], ["Utilisateurs", "Créer un utilisateur"]]
+        )
+        self.assertEqual([texts(user) for user in _by_class(nav, "yc-user")], [["alice"]])
+        self.assertIsNotNone(find_button(nav, "Se déconnecter"))
+        self.assertEqual(texts(self._content()), ["Bienvenue alice."])
 
     async def test_a_refused_login_stays_on_the_login_screen(self):
         self.auth.fail = True
@@ -91,15 +117,18 @@ class TestWebApplication(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.events, [])
         self.assertIn("refused", texts(self.mount))
 
-    async def test_an_entry_runs_its_step_then_shows_saved_and_back_to_the_menu(self):
+    async def test_an_entry_closes_its_dropdown_runs_its_step_and_keeps_the_bar(self):
         await self._submit(user="alice")
+        (dropdown, _) = _by_class(self.mount, "yc-menu")
+        dropdown.attrs["open"] = ""
+
         await self._choose("Créer un rôle")
+        self.assertNotIn("open", dropdown.attrs)
         await self._submit(name="editor")
 
         self.assertEqual(self.data.calls, [("role", {"name": "editor"})])
-        self.assertEqual(texts(self.mount), ["Enregistré.", "Retour au menu"])
-        await self._choose("Retour au menu")
-        self.assertIn("Créer un rôle", texts(self.mount))
+        self.assertEqual(texts(self._content()), ["Enregistré."])
+        self.assertEqual(len(_by_class(self.mount, "yc-nav")), 1)
 
     async def test_chained_steps_are_prefilled_from_the_previous_one(self):
         await self._submit(user="alice")
@@ -109,16 +138,13 @@ class TestWebApplication(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((find_field(self.mount, "login").value, find_field(self.mount, "id").value), ("bob", "credentials-1"))
         await self._submit(name="Bob")
         self.assertEqual(self.data.calls[-1], ("profile", {"login": "bob", "id": "credentials-1", "name": "Bob"}))
-        self.assertEqual(texts(self.mount), ["Enregistré.", "Retour au menu"])
+        self.assertEqual(texts(self._content()), ["Enregistré."])
 
-    async def test_sign_out_returns_to_the_login_screen(self):
+    async def test_sign_out_removes_the_bar_and_returns_to_the_login_screen(self):
         await self._submit(user="alice")
 
         await self._choose("Se déconnecter")
 
         self.assertEqual(self.events[-1], ("out",))
-        self.assertIn("login", texts(self.mount))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        self.assertEqual(_by_class(self.mount, "yc-nav"), [])
+        self.assertIsNotNone(find_field(self.mount, "user"))

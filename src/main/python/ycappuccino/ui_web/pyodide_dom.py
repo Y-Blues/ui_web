@@ -53,6 +53,9 @@ class PyodideDom:
     def set_attribute(self, element: Any, name: str, value: str) -> None:
         element.setAttribute(name, value)
 
+    def remove_attribute(self, element: Any, name: str) -> None:
+        element.removeAttribute(name)
+
     def get_value(self, element: Any) -> str:
         return element.value
 

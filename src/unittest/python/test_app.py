@@ -33,7 +33,7 @@ class TestRenderScreen(unittest.TestCase):
 
         self.assertIn("username", view.field_elements)
         self.assertEqual(view.field_elements["username"].tag, "input")
-        self.assertIn(view.field_elements["username"], mount.children)
+        self.assertIs(find_field(mount, "username"), view.field_elements["username"])
 
     def test_inputs_are_named_after_their_field_and_found_by_name_or_text(self):
         dom = FakeDom()
@@ -226,13 +226,18 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual((results, view.last_error, view.status_element.text), (["token"], None, ""))
 
-    def test_the_title_is_rendered_first(self):
+    def test_the_screen_is_one_styled_block_titled_first(self):
         dom = FakeDom()
         mount = dom.create_element("div")
 
-        render_screen(_login_screen(), FakeTransport(), dom, mount)
+        view = render_screen(_login_screen(), FakeTransport(), dom, mount)
 
-        self.assertEqual((mount.children[0].tag, mount.children[0].text), ("h2", "Connexion"))
+        (block,) = mount.children
+        self.assertEqual((block.tag, block.attrs["class"]), ("div", "yc-screen"))
+        self.assertEqual((block.children[0].tag, block.children[0].text), ("h2", "Connexion"))
+        self.assertEqual(view.error_elements["username"].attrs["class"], "yc-error")
+        self.assertEqual(view.action_elements["submit"].attrs["class"], "yc-button")
+        self.assertEqual(view.status_element.attrs["class"], "yc-status")
 
 
 def _collect(results):

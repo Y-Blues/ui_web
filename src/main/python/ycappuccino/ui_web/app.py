@@ -88,21 +88,22 @@ class ScreenView:
 def render_screen(
     screen: Screen, transport: Transport, dom: DomBinding, mount: Any, on_result: OnResult | None = None
 ) -> ScreenView:
-    """on_result receives the result of every successful action, e.g. to show the next screen"""
+    """on_result receives the result of every successful action, e.g. to show the next screen. The screen is
+    one div.yc-screen: h2 title, a div.yc-field per field (label, input, span.yc-error), div.yc-actions with
+    the buttons, p.yc-status for a refused call."""
     field_elements = {}
     error_elements = {}
     action_elements = {}
 
-    title = dom.create_element("h2")
-    dom.set_text(title, screen.title)
-    dom.append_child(mount, title)
+    block = _element(dom, mount, "div", "yc-screen")
+    dom.set_text(_element(dom, block, "h2", "yc-title"), screen.title)
 
     for a_field in screen.fields:
-        label = dom.create_element("label")
-        dom.set_text(label, a_field.label)
-        dom.append_child(mount, label)
+        row = _element(dom, block, "div", f"yc-field yc-field-{a_field.type}")
+        dom.set_text(_element(dom, row, "label", "yc-label"), a_field.label)
 
         input_element = dom.create_element(_input_tag(a_field))
+        dom.set_attribute(input_element, "class", "yc-input")
         dom.set_attribute(input_element, "type", _FIELD_INPUT_TYPES.get(a_field.type, "text"))
         dom.set_attribute(input_element, "name", a_field.name)
         if a_field.type == "choice":
@@ -111,28 +112,36 @@ def render_screen(
                 dom.set_text(option, choice)
                 dom.set_attribute(option, "value", choice)
                 dom.append_child(input_element, option)
-        dom.append_child(mount, input_element)
+        dom.append_child(row, input_element)
+        if a_field.default is not None:
+            dom.set_value(input_element, str(a_field.default))
         field_elements[a_field.name] = input_element
 
-        error_element = dom.create_element("span")
-        dom.append_child(mount, error_element)
-        error_elements[a_field.name] = error_element
+        error_elements[a_field.name] = _element(dom, row, "span", "yc-error")
 
+    actions = _element(dom, block, "div", "yc-actions")
     status_element = dom.create_element("p")
+    dom.set_attribute(status_element, "class", "yc-status")
     dom.set_attribute(status_element, "role", "alert")
     view = ScreenView(
         screen, transport, dom, field_elements, error_elements, action_elements, status_element, on_result
     )
 
     for action in screen.actions:
-        button = dom.create_element("button")
+        button = _element(dom, actions, "button", "yc-button")
         dom.set_text(button, action.label)
-        dom.append_child(mount, button)
         action_elements[action.name] = button
         dom.on_click(button, _submit_handler(view, action))
 
-    dom.append_child(mount, status_element)
+    dom.append_child(block, status_element)
     return view
+
+
+def _element(dom: DomBinding, parent: Any, tag: str, css_class: str) -> Any:
+    element = dom.create_element(tag)
+    dom.set_attribute(element, "class", css_class)
+    dom.append_child(parent, element)
+    return element
 
 
 def _submit_handler(view: ScreenView, action: Action) -> Callable:
