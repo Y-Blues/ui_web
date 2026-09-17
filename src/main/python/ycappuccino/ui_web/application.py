@@ -1,7 +1,7 @@
 """
-WebApplication: renders a ycappuccino.ui.application.Application in a page -- the login screen, then a
-navigation bar (header.yc-nav: the title, one details.yc-menu dropdown per menu section, the signed-in user,
-sign-out) above the content (main.yc-content): the welcome, each entry's chained screens (prefilled from the
+WebApplication: renders a ycappuccino.ui.application.Application as a site -- a bar (header.yc-nav) naming
+it above the login screen, then the same bar with one details.yc-menu dropdown per menu section, the
+signed-in user and sign-out, above the content (main.yc-content): the welcome, each entry's chained screens (prefilled from the
 previous one), the saved message. ui_shell's ShellApplication renders the same Application in a terminal.
 """
 
@@ -40,6 +40,7 @@ class WebApplication:
 
     def show_login(self) -> None:
         self._dom.clear(self._root)
+        self._bar()
         page = self._element(self._root, "main", "yc-content yc-login")
         login = self._application.login
 
@@ -54,11 +55,11 @@ class WebApplication:
 
     def show_home(self, user: str | None) -> None:
         self._dom.clear(self._root)
-        nav = self._element(self._root, "header", "yc-nav")
-        self._dom.set_text(self._element(nav, "span", "yc-brand"), self._application.title)
+        nav = self._bar()
         menus = self._element(nav, "nav", "yc-menus")
+        dropdowns: list = []
         for group in self._application.menu:
-            self._dropdown(menus, group)
+            self._dropdown(menus, group, dropdowns)
         session = self._element(nav, "div", "yc-session")
         if user:
             self._dom.set_text(self._element(session, "span", "yc-user"), user)
@@ -69,9 +70,25 @@ class WebApplication:
         self._content = Navigator(self._dom, self._element(self._root, "main", "yc-content"))
         self._content.show_message(self._application.welcome_text(user))
 
-    def _dropdown(self, parent: Any, group: MenuGroup) -> None:
+    def _bar(self) -> Any:
+        """the site bar, naming the site; once signed in it also holds the menus and the session"""
+        nav = self._element(self._root, "header", "yc-nav")
+        self._dom.set_text(self._element(nav, "span", "yc-brand"), self._application.title)
+        return nav
+
+    def _dropdown(self, parent: Any, group: MenuGroup, dropdowns: list) -> None:
         dropdown = self._element(parent, "details", "yc-menu")
-        self._dom.set_text(self._element(dropdown, "summary", "yc-menu-label"), group.label)
+        dropdowns.append(dropdown)
+        label = self._element(dropdown, "summary", "yc-menu-label")
+        self._dom.set_text(label, group.label)
+
+        async def close_the_others() -> None:
+            # the browser toggles this one itself
+            for other in dropdowns:
+                if other is not dropdown:
+                    self._dom.remove_attribute(other, "open")
+
+        self._dom.on_click(label, close_the_others)
         items = self._element(dropdown, "div", "yc-menu-items")
         for entry in group.entries:
             item = self._element(items, "button", "yc-menu-item")

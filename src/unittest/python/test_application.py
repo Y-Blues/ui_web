@@ -91,9 +91,11 @@ class TestWebApplication(unittest.IsolatedAsyncioTestCase):
         (content,) = _by_class(self.mount, "yc-content")
         return content
 
-    def test_before_login_there_is_no_navigation_bar(self):
-        self.assertEqual(_by_class(self.mount, "yc-nav"), [])
-        self.assertIn("login", texts(self.mount))
+    def test_before_login_the_bar_only_names_the_site(self):
+        (nav,) = _by_class(self.mount, "yc-nav")
+        self.assertEqual(texts(nav), ["Administration"])
+        self.assertEqual(_by_class(nav, "yc-menu"), [])
+        self.assertIn("login", texts(self._content()))
 
     async def test_login_shows_the_bar_with_one_dropdown_per_section_the_user_and_the_welcome(self):
         await self._submit(user="alice")
@@ -108,6 +110,15 @@ class TestWebApplication(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([texts(user) for user in _by_class(nav, "yc-user")], [["alice"]])
         self.assertIsNotNone(find_button(nav, "Se déconnecter"))
         self.assertEqual(texts(self._content()), ["Bienvenue alice."])
+
+    async def test_opening_a_dropdown_closes_the_other_ones(self):
+        await self._submit(user="alice")
+        roles, users = _by_class(self.mount, "yc-menu")
+        roles.attrs["open"] = ""
+
+        await self.dom.click(_by_class(users, "yc-menu-label")[0])
+
+        self.assertNotIn("open", roles.attrs)
 
     async def test_a_refused_login_stays_on_the_login_screen(self):
         self.auth.fail = True
@@ -140,11 +151,11 @@ class TestWebApplication(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.data.calls[-1], ("profile", {"login": "bob", "id": "credentials-1", "name": "Bob"}))
         self.assertEqual(texts(self._content()), ["Enregistré."])
 
-    async def test_sign_out_removes_the_bar_and_returns_to_the_login_screen(self):
+    async def test_sign_out_removes_the_menus_and_returns_to_the_login_screen(self):
         await self._submit(user="alice")
 
         await self._choose("Se déconnecter")
 
         self.assertEqual(self.events[-1], ("out",))
-        self.assertEqual(_by_class(self.mount, "yc-nav"), [])
+        self.assertEqual(_by_class(self.mount, "yc-menu"), [])
         self.assertIsNotNone(find_field(self.mount, "user"))

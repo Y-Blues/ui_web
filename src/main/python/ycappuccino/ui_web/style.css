@@ -1,4 +1,4 @@
-/* default theme of ycappuccino-ui-web: espresso navigation bar with a crema band, quiet porcelain page */
+/* default theme of ycappuccino-ui-web: a site -- espresso bar with a crema band, plain pages below */
 :root {
   --yc-espresso: #2a1b12;
   --yc-crema: #c9a27e;
@@ -39,13 +39,15 @@ body {
   font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-/* navigation bar */
+/* site bar: full width, its content aligned with the pages below */
 .yc-nav {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 20px;
-  padding: 10px 24px;
+  padding: 10px max(24px, calc((100% - 1200px) / 2 + 24px));
+  min-height: 56px;
+  box-sizing: border-box;
   background: var(--yc-espresso);
   color: var(--yc-nav-ink);
   border-bottom: 3px solid var(--yc-crema);
@@ -145,37 +147,31 @@ body {
   border-color: rgba(245, 237, 230, 0.4);
 }
 
-/* content */
+/* content: a page of the site, aligned with the bar, not a window */
 .yc-content {
-  max-width: 560px;
-  margin: 40px auto;
-  padding: 0 16px;
-}
-
-.yc-login {
-  max-width: 400px;
-  margin-top: 12vh;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  box-sizing: border-box;
 }
 
 .yc-screen {
-  background: var(--yc-panel);
-  border: 1px solid var(--yc-line);
-  border-radius: var(--yc-radius);
-  padding: 24px 28px;
+  max-width: 520px;
 }
 
 .yc-title {
-  margin: 0 0 20px;
-  font-size: 22px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  margin: 0 0 28px;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .yc-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 14px;
+  gap: 6px;
+  margin-bottom: 18px;
 }
 
 .yc-label {
@@ -185,10 +181,10 @@ body {
 .yc-input {
   font: inherit;
   color: inherit;
-  background: var(--yc-page);
+  background: var(--yc-panel);
   border: 1px solid var(--yc-line);
   border-radius: 4px;
-  padding: 8px 10px;
+  padding: 9px 12px;
 }
 
 .yc-input:focus {
@@ -216,13 +212,13 @@ body {
 .yc-actions {
   display: flex;
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 28px;
 }
 
 .yc-button {
   font: inherit;
   font-weight: 600;
-  padding: 8px 16px;
+  padding: 9px 18px;
   border-radius: var(--yc-radius);
   border: 1px solid var(--yc-accent);
   background: var(--yc-accent);
@@ -242,21 +238,17 @@ body {
 }
 
 .yc-status {
-  margin: 16px 0 0;
-  padding: 10px 12px;
-  border-left: 3px solid var(--yc-error);
-  background: color-mix(in srgb, var(--yc-error) 10%, transparent);
+  margin: 20px 0 0;
   color: var(--yc-error);
-  border-radius: 0 4px 4px 0;
+  font-weight: 550;
 }
 
 .yc-message {
   margin: 0;
-  padding: 16px 20px;
-  background: var(--yc-panel);
-  border: 1px solid var(--yc-line);
-  border-left: 3px solid var(--yc-accent);
-  border-radius: var(--yc-radius);
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 @media (max-width: 640px) {
@@ -280,11 +272,11 @@ body {
   }
 
   .yc-content {
-    margin: 20px auto;
+    padding: 28px 16px 40px;
   }
 
-  .yc-screen {
-    padding: 20px 16px;
+  .yc-title {
+    font-size: 24px;
   }
 }
 

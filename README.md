@@ -97,10 +97,11 @@ Les choix (`create_role`, `sign_out`...) sont des fonctions sans argument qui re
 on_signed_out)` rend une `ycappuccino.ui.application.Application` (voir le README de `ui`) dans le `mount`
 du navigator :
 
-- avant connexion, l'écran de connexion seul (`main.yc-content.yc-login`) ;
-- ensuite une barre `header.yc-nav` (titre, un menu déroulant `details.yc-menu` par section, l'utilisateur,
-  « Se déconnecter ») au-dessus de `main.yc-content` : le message de bienvenue, les écrans d'une entrée
-  (pré-remplis depuis l'étape précédente), puis « Enregistré. ».
+- une page de site : une barre `header.yc-nav` pleine largeur, au-dessus du contenu `main.yc-content` ;
+- avant connexion, la barre ne porte que le titre, le contenu est l'écran de connexion ;
+- ensuite la barre porte aussi un menu déroulant `details.yc-menu` par section (en ouvrir un ferme les
+  autres, choisir une entrée le referme), l'utilisateur et « Se déconnecter » ; le contenu montre le message
+  de bienvenue, les écrans d'une entrée (pré-remplis depuis l'étape précédente), puis « Enregistré. ».
 
 `ui_shell` rend la même `Application` en terminal. `screens` charge un `Screen` par son nom, `transports`
 associe un nom à un `Transport` ; `on_signed_in(résultat)` reçoit le résultat de la connexion (un jeton,
@@ -110,7 +111,8 @@ par exemple).
 
 Chaque élément porte une classe `yc-*` (`yc-screen`, `yc-field`, `yc-input`, `yc-error`, `yc-button`,
 `yc-status`, `yc-nav`, `yc-menu`...). `PyodidePage` installe au démarrage le thème par défaut,
-`ycappuccino/ui_web/style.css` (barre expresso, clair et sombre, mobile) ; une application peut le compléter
+`ycappuccino/ui_web/style.css` : une page de site, sans cadre (barre expresso pleine largeur, contenu aligné
+sur une largeur de 1200 px, clair et sombre, mobile) ; une application peut le compléter
 ou le remplacer avec sa propre feuille de style sur ces mêmes classes.
 
 ## La page : `IWebPage`
