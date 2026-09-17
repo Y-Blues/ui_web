@@ -130,16 +130,13 @@ dépôt — même discipline que `client/README.md`, à ne pas édulcorer :
   du périmètre de ce dépôt, laissé au bootstrap navigateur (voir `client/static/main.py` pour la
   séquence Pyodide complète — ce dépôt n'écrit pas son propre bootstrap, il consomme celui de
   `client`).
-- **Types de champ `date`/`choice`/`password`** : l'attribut `type`/le tag `select` posé sur
-  l'élément est prouvé (`FakeDom`), mais le rendu réel d'un `<input type="date">` ou d'un
-  `<select>` avec ses `<option>` (non générées ici — seul le tag `select` est créé, pas ses
-  options) reste à faire une fois un vrai écran avec des choix l'exige.
+- **Types de champ `date`/`choice`/`password`** : l'attribut `type`, le tag `select` et ses
+  `<option>` (une par `Field.choices`, prouvé par `FakeDom`) sont posés sur l'élément, mais leur
+  rendu réel dans un vrai navigateur (`<input type="date">` avec un vrai sélecteur, `<select>`
+  avec ses options réellement affichées/sélectionnables) n'est vérifié nulle part ici.
 
 ## Ce qui n'est pas encore fait
 
-- **Les `<option>` d'un champ `choice`** : `render_screen` crée un `<select>` mais n'y ajoute
-  aucune `<option>` pour `Field.choices` — prochaine étape évidente, pas encore une test failing
-  écrit pour elle.
 - **Layout au-delà d'une liste verticale simple** (pas de grille/sections/écrans imbriqués) — même
   limite que `ui_shell`, non nécessaire pour prouver le modèle.
 - **Navigation entre plusieurs écrans** (un « écran suivant » après une action réussie).

@@ -58,6 +58,21 @@ class TestFieldTypes(unittest.TestCase):
 
         self.assertEqual(view.field_elements["role"].tag, "select")
 
+    def test_choice_field_gets_one_option_per_choice(self):
+        dom = FakeDom()
+        mount = dom.create_element("div")
+        screen = Screen(
+            title="t",
+            fields=(Field(name="role", label="Role", type="choice", choices=("admin", "member")),),
+        )
+
+        view = render_screen(screen, FakeTransport(), dom, mount)
+
+        select = view.field_elements["role"]
+        self.assertEqual([option.tag for option in select.children], ["option", "option"])
+        self.assertEqual([option.text for option in select.children], ["admin", "member"])
+        self.assertEqual([option.attrs["value"] for option in select.children], ["admin", "member"])
+
     def test_number_field_input_type(self):
         dom = FakeDom()
         mount = dom.create_element("div")
@@ -84,6 +99,22 @@ class TestSubmitFieldCoercion(unittest.IsolatedAsyncioTestCase):
         await dom.click(view.action_elements["submit"])
 
         self.assertEqual(transport.calls, [("svc", "POST", (), {}, {"age": 42})])
+
+    async def test_choice_field_sends_the_selected_value(self):
+        dom = FakeDom()
+        mount = dom.create_element("div")
+        transport = FakeTransport(result=None)
+        screen = Screen(
+            title="t",
+            fields=(Field(name="role", label="Role", type="choice", choices=("admin", "member")),),
+            actions=(Action(name="submit", label="Go", endpoint=Endpoint(service="svc")),),
+        )
+        view = render_screen(screen, transport, dom, mount)
+        dom.set_value(view.field_elements["role"], "member")
+
+        await dom.click(view.action_elements["submit"])
+
+        self.assertEqual(transport.calls, [("svc", "POST", (), {}, {"role": "member"})])
 
     async def test_boolean_field_is_coerced_before_the_call(self):
         dom = FakeDom()

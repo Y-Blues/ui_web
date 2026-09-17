@@ -68,6 +68,12 @@ def render_screen(screen: Screen, transport: Transport, dom: DomBinding, mount: 
 
         input_element = dom.create_element(_input_tag(a_field))
         dom.set_attribute(input_element, "type", _FIELD_INPUT_TYPES.get(a_field.type, "text"))
+        if a_field.type == "choice":
+            for choice in a_field.choices:
+                option = dom.create_element("option")
+                dom.set_text(option, choice)
+                dom.set_attribute(option, "value", choice)
+                dom.append_child(input_element, option)
         dom.append_child(mount, input_element)
         field_elements[a_field.name] = input_element
 
