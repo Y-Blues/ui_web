@@ -10,14 +10,14 @@ APPLICATION = load_application_yaml("""
 title: Administration
 login: {screen: login, transport: auth, user: user}
 menu:
-  - label: Rôles
+  - label: Roles
     entries:
-      - label: Créer un rôle
+      - label: Create a role
         steps:
           - {screen: role, transport: data}
-  - label: Utilisateurs
+  - label: Users
     entries:
-      - label: Créer un utilisateur
+      - label: Create a user
         steps:
           - {screen: credentials, transport: data}
           - {screen: profile, transport: data, prefill: {login: values.login, id: result._id}}
@@ -28,7 +28,7 @@ def _screen(title, *names):
     return Screen(
         title=title,
         fields=tuple(Field(name=name, label=name) for name in names),
-        actions=(Action(name="submit", label="Valider", endpoint=Endpoint(service=title)),),
+        actions=(Action(name="submit", label="Submit", endpoint=Endpoint(service=title)),),
     )
 
 
@@ -82,7 +82,7 @@ class TestWebApplication(unittest.IsolatedAsyncioTestCase):
     async def _submit(self, **values):
         for name, value in values.items():
             self.dom.set_value(find_field(self.mount, name), value)
-        await self.dom.click(find_button(self.mount, "Valider"))
+        await self.dom.click(find_button(self.mount, "Submit"))
 
     async def _choose(self, label):
         await self.dom.click(find_button(self.mount, label))
@@ -105,11 +105,11 @@ class TestWebApplication(unittest.IsolatedAsyncioTestCase):
         dropdowns = _by_class(nav, "yc-menu")
         self.assertEqual([dropdown.tag for dropdown in dropdowns], ["details", "details"])
         self.assertEqual(
-            [texts(dropdown) for dropdown in dropdowns], [["Rôles", "Créer un rôle"], ["Utilisateurs", "Créer un utilisateur"]]
+            [texts(dropdown) for dropdown in dropdowns], [["Roles", "Create a role"], ["Users", "Create a user"]]
         )
         self.assertEqual([texts(user) for user in _by_class(nav, "yc-user")], [["alice"]])
-        self.assertIsNotNone(find_button(nav, "Se déconnecter"))
-        self.assertEqual(texts(self._content()), ["Bienvenue alice."])
+        self.assertIsNotNone(find_button(nav, "Sign out"))
+        self.assertEqual(texts(self._content()), ["Welcome, alice."])
 
     async def test_opening_a_dropdown_closes_the_other_ones(self):
         await self._submit(user="alice")
@@ -133,28 +133,28 @@ class TestWebApplication(unittest.IsolatedAsyncioTestCase):
         (dropdown, _) = _by_class(self.mount, "yc-menu")
         dropdown.attrs["open"] = ""
 
-        await self._choose("Créer un rôle")
+        await self._choose("Create a role")
         self.assertNotIn("open", dropdown.attrs)
         await self._submit(name="editor")
 
         self.assertEqual(self.data.calls, [("role", {"name": "editor"})])
-        self.assertEqual(texts(self._content()), ["Enregistré."])
+        self.assertEqual(texts(self._content()), ["Saved."])
         self.assertEqual(len(_by_class(self.mount, "yc-nav")), 1)
 
     async def test_chained_steps_are_prefilled_from_the_previous_one(self):
         await self._submit(user="alice")
-        await self._choose("Créer un utilisateur")
+        await self._choose("Create a user")
         await self._submit(login="bob")
 
         self.assertEqual((find_field(self.mount, "login").value, find_field(self.mount, "id").value), ("bob", "credentials-1"))
         await self._submit(name="Bob")
         self.assertEqual(self.data.calls[-1], ("profile", {"login": "bob", "id": "credentials-1", "name": "Bob"}))
-        self.assertEqual(texts(self._content()), ["Enregistré."])
+        self.assertEqual(texts(self._content()), ["Saved."])
 
     async def test_sign_out_removes_the_menus_and_returns_to_the_login_screen(self):
         await self._submit(user="alice")
 
-        await self._choose("Se déconnecter")
+        await self._choose("Sign out")
 
         self.assertEqual(self.events[-1], ("out",))
         self.assertEqual(_by_class(self.mount, "yc-menu"), [])

@@ -26,9 +26,9 @@ class TestLogin(unittest.IsolatedAsyncioTestCase):
         mount = dom.create_element("div")
         transport = FakeTransport(result={"token": "abc"})
         screen = Screen(
-            title="Connexion",
-            fields=(Field(name="username", label="Nom d'utilisateur", required=True),),
-            actions=(Action(name="submit", label="Se connecter", endpoint=Endpoint(service="login")),),
+            title="Sign in",
+            fields=(Field(name="username", label="Username", required=True),),
+            actions=(Action(name="submit", label="Sign in", endpoint=Endpoint(service="login")),),
         )
         view = render_screen(screen, transport, dom, mount)
         dom.set_value(view.field_elements["username"], "aurelien")

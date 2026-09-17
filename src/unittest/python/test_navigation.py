@@ -20,7 +20,7 @@ def _screen(title):
     return Screen(
         title=title,
         fields=(Field(name="name", label="Nom"),),
-        actions=(Action(name="submit", label="Valider", endpoint=Endpoint(service="svc")),),
+        actions=(Action(name="submit", label="Submit", endpoint=Endpoint(service="svc")),),
     )
 
 
@@ -40,14 +40,14 @@ class TestNavigator(unittest.IsolatedAsyncioTestCase):
 
     async def test_a_result_can_navigate_to_the_next_screen(self):
         async def next_screen(result):
-            self.navigator.show_screen(_screen(f"Bienvenue {result}"), FakeTransport())
+            self.navigator.show_screen(_screen(f"Welcome {result}"), FakeTransport())
 
-        view = self.navigator.show_screen(_screen("Connexion"), FakeTransport(result="alice"), on_result=next_screen)
+        view = self.navigator.show_screen(_screen("Sign in"), FakeTransport(result="alice"), on_result=next_screen)
 
         await self.dom.click(view.action_elements["submit"])
 
-        self.assertIn("Bienvenue alice", texts(self.mount))
-        self.assertNotIn("Connexion", texts(self.mount))
+        self.assertIn("Welcome alice", texts(self.mount))
+        self.assertNotIn("Sign in", texts(self.mount))
 
     async def test_a_menu_shows_one_button_per_entry_and_runs_the_chosen_one(self):
         chosen = []
@@ -57,19 +57,19 @@ class TestNavigator(unittest.IsolatedAsyncioTestCase):
 
         buttons = self.navigator.show_menu(
             "Administration",
-            [("Créer un rôle", lambda: choose("role")), ("Se déconnecter", lambda: choose("logout"))],
+            [("Create a role", lambda: choose("role")), ("Sign out", lambda: choose("logout"))],
         )
 
-        await self.dom.click(buttons["Se déconnecter"])
+        await self.dom.click(buttons["Sign out"])
 
-        self.assertEqual(texts(self.mount), ["Administration", "Créer un rôle", "Se déconnecter"])
+        self.assertEqual(texts(self.mount), ["Administration", "Create a role", "Sign out"])
         self.assertEqual(chosen, ["logout"])
 
     def test_a_message_is_shown_alone_with_a_way_back(self):
-        buttons = self.navigator.show_message("Utilisateur créé", back=("Retour au menu", None))
+        buttons = self.navigator.show_message("User created", back=("Back to the menu", None))
 
-        self.assertEqual(texts(self.mount), ["Utilisateur créé", "Retour au menu"])
-        self.assertIn("Retour au menu", buttons)
+        self.assertEqual(texts(self.mount), ["User created", "Back to the menu"])
+        self.assertIn("Back to the menu", buttons)
 
 
 if __name__ == "__main__":

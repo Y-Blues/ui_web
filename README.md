@@ -38,9 +38,9 @@ from ycappuccino.ui_web.app import render_screen
 from ycappuccino.ui_web.pyodide_dom import PyodideDom  # navigateur réel uniquement
 
 screen = Screen(
-    title="Connexion",
-    fields=(Field(name="username", label="Nom d'utilisateur", required=True),),
-    actions=(Action(name="submit", label="Se connecter", endpoint=Endpoint(service="login")),),
+    title="Sign in",
+    fields=(Field(name="username", label="Username", required=True),),
+    actions=(Action(name="submit", label="Sign in", endpoint=Endpoint(service="login")),),
 )
 
 dom = PyodideDom()
@@ -85,8 +85,8 @@ appel remplaçant la précédente :
 
 ```python
 navigator.show_screen(login_screen, transport, on_result=signed_in)   # un écran ; signed_in(result)
-navigator.show_menu("Administration", [("Créer un rôle", create_role), ("Se déconnecter", sign_out)])
-navigator.show_message("Utilisateur créé", back=("Retour au menu", show_menu))
+navigator.show_menu("Administration", [("Create a role", create_role), ("Sign out", sign_out)])
+navigator.show_message("User created", back=("Back to the menu", show_menu))
 ```
 
 Les choix (`create_role`, `sign_out`...) sont des fonctions sans argument qui renvoient une coroutine.
@@ -100,8 +100,8 @@ du navigator :
 - une page de site : une barre `header.yc-nav` pleine largeur, au-dessus du contenu `main.yc-content` ;
 - avant connexion, la barre ne porte que le titre, le contenu est l'écran de connexion ;
 - ensuite la barre porte aussi un menu déroulant `details.yc-menu` par section (en ouvrir un ferme les
-  autres, choisir une entrée le referme), l'utilisateur et « Se déconnecter » ; le contenu montre le message
-  de bienvenue, les écrans d'une entrée (pré-remplis depuis l'étape précédente), puis « Enregistré. ».
+  autres, choisir une entrée le referme), l'utilisateur et « Sign out » ; le contenu montre le message
+  de bienvenue, les écrans d'une entrée (pré-remplis depuis l'étape précédente), puis « Saved. ».
 
 `ui_shell` rend la même `Application` en terminal. `screens` charge un `Screen` par son nom, `transports`
 associe un nom à un `Transport` ; `on_signed_in(résultat)` reçoit le résultat de la connexion (un jeton,
@@ -151,9 +151,9 @@ class TestLogin(unittest.IsolatedAsyncioTestCase):
         mount = dom.create_element("div")
         transport = FakeTransport(result={"token": "abc"})
         screen = Screen(
-            title="Connexion",
-            fields=(Field(name="username", label="Nom d'utilisateur", required=True),),
-            actions=(Action(name="submit", label="Se connecter", endpoint=Endpoint(service="login")),),
+            title="Sign in",
+            fields=(Field(name="username", label="Username", required=True),),
+            actions=(Action(name="submit", label="Sign in", endpoint=Endpoint(service="login")),),
         )
         view = render_screen(screen, transport, dom, mount)
         dom.set_value(view.field_elements["username"], "aurelien")

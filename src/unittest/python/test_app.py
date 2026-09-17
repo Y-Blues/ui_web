@@ -18,9 +18,9 @@ class FakeTransport:
 
 def _login_screen():
     return Screen(
-        title="Connexion",
-        fields=(Field(name="username", label="Nom d'utilisateur", required=True),),
-        actions=(Action(name="submit", label="Se connecter", endpoint=Endpoint(service="login")),),
+        title="Sign in",
+        fields=(Field(name="username", label="Username", required=True),),
+        actions=(Action(name="submit", label="Sign in", endpoint=Endpoint(service="login")),),
     )
 
 
@@ -43,7 +43,7 @@ class TestRenderScreen(unittest.TestCase):
 
         self.assertEqual(view.field_elements["username"].attrs["name"], "username")
         self.assertIs(find_field(mount, "username"), view.field_elements["username"])
-        self.assertIs(find_button(mount, "Se connecter"), view.action_elements["submit"])
+        self.assertIs(find_button(mount, "Sign in"), view.action_elements["submit"])
         self.assertIsNone(find_button(mount, "missing"))
 
     def test_a_field_can_be_prefilled(self):
@@ -62,7 +62,7 @@ class TestRenderScreen(unittest.TestCase):
         view = render_screen(_login_screen(), FakeTransport(), dom, mount)
 
         self.assertIn("submit", view.action_elements)
-        self.assertEqual(view.action_elements["submit"].text, "Se connecter")
+        self.assertEqual(view.action_elements["submit"].text, "Sign in")
 
 
 class TestFieldTypes(unittest.TestCase):
@@ -193,7 +193,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(transport.calls, [])
         self.assertEqual(
             view.error_elements["username"].text,
-            "Nom d'utilisateur is required",
+            "Username is required",
         )
 
 
@@ -234,7 +234,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
 
         (block,) = mount.children
         self.assertEqual((block.tag, block.attrs["class"]), ("div", "yc-screen"))
-        self.assertEqual((block.children[0].tag, block.children[0].text), ("h2", "Connexion"))
+        self.assertEqual((block.children[0].tag, block.children[0].text), ("h2", "Sign in"))
         self.assertEqual(view.error_elements["username"].attrs["class"], "yc-error")
         self.assertEqual(view.action_elements["submit"].attrs["class"], "yc-button")
         self.assertEqual(view.status_element.attrs["class"], "yc-status")
