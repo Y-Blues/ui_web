@@ -46,6 +46,15 @@ class TestRenderScreen(unittest.TestCase):
         self.assertIs(find_button(mount, "Se connecter"), view.action_elements["submit"])
         self.assertIsNone(find_button(mount, "missing"))
 
+    def test_a_field_can_be_prefilled(self):
+        dom = FakeDom()
+        mount = dom.create_element("div")
+        view = render_screen(_login_screen(), FakeTransport(), dom, mount)
+
+        view.set_value("username", "aurelien")
+
+        self.assertEqual(view.field_elements["username"].value, "aurelien")
+
     def test_button_carries_the_action_label(self):
         dom = FakeDom()
         mount = dom.create_element("div")

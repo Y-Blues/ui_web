@@ -70,6 +70,10 @@ class ScreenView:
         if self.status_element is not None:
             self._dom.set_text(self.status_element, message or "")
 
+    def set_value(self, field_name: str, value: Any) -> None:
+        """prefill a field, e.g. with what a previous screen created"""
+        self._dom.set_value(self.field_elements[field_name], "" if value is None else str(value))
+
     def _collect_values(self) -> dict[str, Any]:
         return {
             a_field.name: _read_value(self._dom, a_field, self.field_elements[a_field.name])
